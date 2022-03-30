@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const ApiError = require('../errors/ApiError');
 const { User } = require('../models/models');
 
-const generateJWT = (id, email, role) => jwt.sign(
-  { id, email, role },
+const generateJWT = id => jwt.sign(
+  { id },
   process.env.SECRET_KEY,
   { expiresIn: '24h' },
 );
@@ -26,8 +26,8 @@ class UserController {
 
       const hashPassword = await bcrypt.hash(password, 3);
       const user = await User.create({ email, role, password: hashPassword });
-      const token = generateJWT(user.id, email, user.role);
-      return res.json({ token });
+      const token = generateJWT(user.id);
+      return res.json({ token, email, role: user.role, firstName: user.firstName, secondName: user.secondName, phone: user.phone });
     } catch (e) {
       console.log('Что-то пошло не так', e);
     }
@@ -39,18 +39,18 @@ class UserController {
 
       const user = await User.findOne({ where: { email } });
       if (!user) {
-        return next(ApiError.internal('Пользователь с таким именем не найден'));
+        return next(ApiError.badRequest('Пользователь с таким именем не найден'));
       }
 
       const comparePassword = bcrypt.compareSync(password, user.password);
       if (!comparePassword) {
-        return next(ApiError.internal('указан неверный пароль'));
+        return next(ApiError.badRequest('указан неверный пароль'));
       }
 
-      const token = generateJWT(user.id, user.email, user.role);
-      return res.json({ token });
+      const token = generateJWT(user.id);
+      return res.json({ token, email, role: user.role, firstName: user.firstName, secondName: user.secondName, phone: user.phone });
     } catch(e) {
-      console.log('Что-то пошло не так', e);
+      return ApiError.badRequest('Все плохо');
     }
   }
 }
