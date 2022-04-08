@@ -7,10 +7,21 @@ const User = sequelize.define('user', {
   phone: { type: DataTypes.STRING },
   password: { type: DataTypes.STRING, allowNull: false },
   role: { type: DataTypes.STRING, allowNull: false, defaultValue: "USER" },
-  firstName: { type: DataTypes.STRING },
+  firstName: { type: DataTypes.STRING, require: true, defaultValue: 'Пользователь', allowNull: false },
   secondName: { type: DataTypes.STRING },
+  image: { type: DataTypes.STRING, defaultValue: null }
+})
+
+const Advertisement = sequelize.define('advertisement', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  userId: { type: DataTypes.INTEGER },
+  categoryId: { type: DataTypes.INTEGER },
+  brandId: { type: DataTypes.INTEGER },
+  status: { type: DataTypes.STRING, values: ['open', 'closed', 'moderation'], defaultValue: 'moderation' },
+  description: { type: DataTypes.STRING },
 })
 
 module.exports = {
   User,
+  Advertisement,
 };

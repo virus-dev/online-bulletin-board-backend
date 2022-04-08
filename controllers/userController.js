@@ -1,13 +1,20 @@
+const { default: axios } = require('axios');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const ApiError = require('../errors/ApiError');
 const { User } = require('../models/models');
+const FormData = require('form-data');
+const fs = require('fs');
+const jwtDecode = require('jwt-decode');
+const imgbbUploader = require("imgbb-uploader");
 
-const generateJWT = id => jwt.sign(
-  { id },
-  process.env.SECRET_KEY,
-  { expiresIn: '24h' },
-);
+const generateJWT = (email) => {
+  return jwt.sign(
+    { email },
+    process.env.SECRET_KEY,
+    { expiresIn: '24h' },
+  )
+};
 
 class UserController {
   async registration(req, res, next) {
@@ -26,8 +33,16 @@ class UserController {
 
       const hashPassword = await bcrypt.hash(password, 3);
       const user = await User.create({ email, role, password: hashPassword });
-      const token = generateJWT(user.id);
-      return res.json({ token, email, role: user.role, firstName: user.firstName, secondName: user.secondName, phone: user.phone });
+      const token = generateJWT(user.email);
+      return res.json({ 
+        token, 
+        email: user.email, 
+        role: user.role, 
+        firstName: user.firstName, 
+        secondName: user.secondName, 
+        phone: user.phone, 
+        image: user.image
+      });
     } catch (e) {
       console.log('Что-то пошло не так', e);
     }
@@ -37,6 +52,7 @@ class UserController {
     try {
       const { email, password } = req.body;
 
+      console.log(email, password)
       const user = await User.findOne({ where: { email } });
       if (!user) {
         return next(ApiError.badRequest('Пользователь с таким именем не найден'));
@@ -47,9 +63,74 @@ class UserController {
         return next(ApiError.badRequest('указан неверный пароль'));
       }
 
-      const token = generateJWT(user.id);
-      return res.json({ token, email, role: user.role, firstName: user.firstName, secondName: user.secondName, phone: user.phone });
+      const token = generateJWT(user.email);
+      return res.json({ 
+        token, 
+        email: user.email, 
+        role: user.role, 
+        firstName: user.firstName, 
+        secondName: user.secondName, 
+        phone: user.phone, 
+        image: user.image
+      });
     } catch(e) {
+      console.log(e)
+      return ApiError.badRequest('Все плохо');
+    }
+  }
+
+  async update(req, res, next) {
+    try {
+      const { data } = req.files.file;
+
+      const formData = new FormData();
+      formData.append('image', data.toString('base64'))
+
+      const imgRes = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMG_BB_API}`, formData, {
+        headers: formData.getHeaders(),
+      });
+
+      const user = await User.findOne({
+        where: { id: 2 }
+      })
+
+      await user.update({ image: imgRes.data.data.url });
+
+      const token = generateJWT(user.email);
+      return res.json({ 
+        token, 
+        email: user.email, 
+        role: user.role, 
+        firstName: user.firstName, 
+        secondName: user.secondName, 
+        phone: user.phone, 
+        image: user.image
+      });
+    } catch (e) {
+      console.log(e.response)
+      return ApiError.badRequest('Все плохо');
+    }
+  }
+
+  async getData(req, res, next) {
+    try {
+      const token = req.headers.authorization.split(' ')[1]
+      const {
+        email
+      } = jwtDecode(token)
+
+      const user = await User.findOne({ where: { email } });
+
+      return res.json({
+        email: user.email, 
+        role: user.role,
+        firstName: user.firstName, 
+        secondName: user.secondName, 
+        phone: user.phone, 
+        image: user.image,
+      })
+    } catch (e) {
+      console.log(e.response)
       return ApiError.badRequest('Все плохо');
     }
   }
