@@ -12,16 +12,36 @@ const User = sequelize.define('user', {
   image: { type: DataTypes.STRING, defaultValue: null }
 })
 
-const Advertisement = sequelize.define('advertisement', {
+const Advertisement = sequelize.define('advertisements', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  userId: { type: DataTypes.INTEGER },
-  categoryId: { type: DataTypes.INTEGER },
-  brandId: { type: DataTypes.INTEGER },
-  status: { type: DataTypes.STRING, values: ['open', 'closed', 'moderation'], defaultValue: 'moderation' },
-  description: { type: DataTypes.STRING },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
+  title: { type: DataTypes.STRING, allowNull: false },
+  price: { type: DataTypes.INTEGER, allowNull: false },
+  categoryId: { type: DataTypes.INTEGER, allowNull: false },
+  brandId: { type: DataTypes.INTEGER, allowNull: false },
+  status: { type: DataTypes.STRING, defaultValue: 'moderation', allowNull: false },
+  description: { type: DataTypes.STRING, allowNull: false },
+})
+
+const Categories = sequelize.define('categories', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, unique: true },
+});
+
+const Brands = sequelize.define('brands', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, unique: true },
+});
+
+const AdvertisementImages = sequelize.define('advertisementImages', {
+  advertisementId: { type: DataTypes.INTEGER, allowNull: false },
+  imageUrl: { type: DataTypes.STRING, allowNull: false }
 })
 
 module.exports = {
   User,
   Advertisement,
+  Categories,
+  Brands,
+  AdvertisementImages,
 };

@@ -7,6 +7,8 @@ const FormData = require('form-data');
 const fs = require('fs');
 const jwtDecode = require('jwt-decode');
 const imgbbUploader = require("imgbb-uploader");
+const { checkFileForImgBB } = require('../utils/getCheckFileFunc');
+const { validationCheck } = require('../errors/validationCheck');
 
 const generateJWT = (email) => {
   return jwt.sign(
@@ -50,6 +52,8 @@ class UserController {
 
   async login(req, res, next) {
     try {
+      validationCheck(req, res);
+
       const { email, password } = req.body;
 
       console.log(email, password)
@@ -81,7 +85,26 @@ class UserController {
 
   async update(req, res, next) {
     try {
-      const { data } = req.files.file;
+      const { file, file: { data } } = req.files;
+
+      if (!file) {
+        return next(ApiError.badRequest('Файл не загрузился'));
+      }
+
+      if (!checkFileForImgBB(file)) {
+        return next(ApiError.newBadRequest(res, 'Файл не прошел валидацию'));
+      }
+      const {
+        email,
+      } = req.user;
+
+      if (!email) {
+        return ApiError.badRequest('Нет пользователя');
+      }
+
+      const user = await User.findOne({
+        where: { email }
+      })
 
       const formData = new FormData();
       formData.append('image', data.toString('base64'))
@@ -90,13 +113,14 @@ class UserController {
         headers: formData.getHeaders(),
       });
 
-      const user = await User.findOne({
-        where: { id: 2 }
-      })
+      if (imgRes.data.status !== 200) {
+        return next(ApiError.badRequest('Картинка не загрузилать на хостинг'));
+      }
 
       await user.update({ image: imgRes.data.data.url });
 
       const token = generateJWT(user.email);
+
       return res.json({ 
         token, 
         email: user.email, 
@@ -107,8 +131,7 @@ class UserController {
         image: user.image
       });
     } catch (e) {
-      console.log(e.response)
-      return ApiError.badRequest('Все плохо');
+      return ApiError.serverError(e.response);
     }
   }
 

@@ -8,6 +8,14 @@ class ApiError extends Error {
   static badRequest(message) {
     return new ApiError(404, message);
   }
+
+  static newBadRequest(res, message) {
+    return res.status(500).json(message);
+  }
+
+  static serverError(message = '') {
+    return new ApiError(500, 'что-то пошло не так' + message);
+  }
 }
 
 module.exports = ApiError;
