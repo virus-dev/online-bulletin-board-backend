@@ -114,9 +114,6 @@ class UserController {
       const imgRes = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMG_BB_API}`, formData, {
         headers: {
           ...formDataHeaders,
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': 'true',
-          'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,PATCH,OPTIONS',
         },
       });
 

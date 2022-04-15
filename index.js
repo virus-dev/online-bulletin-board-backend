@@ -16,10 +16,9 @@ app.use(express.json());
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.header('Access-Control-Allow-Credentials', 'true')
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS')
-  res.header('strict-origin-when-cross-origin', 'origin')
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Credentials', true);
+  res.header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
   next();
 });
 
@@ -29,7 +28,7 @@ const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
-    app.listen(process.env.PORT || 5000, () => console.log('Start server' + process.env.PORT || 5000));
+    app.listen(process.env.PORT || 5000, () => console.log('Start server ' + process.env.PORT || 5000));
   } catch (e) {
     console.log(e);
   }
