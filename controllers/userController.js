@@ -109,12 +109,15 @@ class UserController {
       const formData = new FormData();
       formData.append('image', data.toString('base64'))
 
-      const formDataHeaders = formData.getHeaders();
+      const headers = {
+        ...formData.getHeaders(),
+        'access-control-allow-headers': 'Cache-Control, X-Requested-With, Content-Type',
+        'access-control-allow-methods': 'POST, GET, OPTIONS',
+        'access-control-allow-origin': '*',
+      };
 
       const imgRes = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMG_BB_API}`, formData, {
-        headers: {
-          ...formDataHeaders,
-        },
+        headers
       });
 
       if (imgRes.data.status !== 200) {
