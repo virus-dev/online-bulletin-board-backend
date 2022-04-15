@@ -17,7 +17,7 @@ const uploadImage = async ({ data }) => {
 class AdvertisementController {
   async create(req, res, next) {
     try {
-      const { file } = req.files;
+      const { files } = req;
 
       const {
         price,
@@ -55,26 +55,82 @@ class AdvertisementController {
         description,
       })
 
-      if (Array.isArray(file)) {
-        for (let i = 0; i < file.length; i++) { 
-          const imageUrl = await uploadImage(file[i]);
+      if (files) {
+        const { file } = files;
+
+        if (Array.isArray(file)) {
+          for (let i = 0; i < file.length; i++) { 
+            const imageUrl = await uploadImage(file[i]);
+            await AdvertisementImages.create({
+              advertisementId: advertisement.id,
+              imageUrl,
+            })
+          }
+        } else {
+          const imageUrl = await uploadImage(file);
           await AdvertisementImages.create({
             advertisementId: advertisement.id,
             imageUrl,
           })
         }
-      } else {
-        const imageUrl = await uploadImage(file);
-        await AdvertisementImages.create({
-          advertisementId: advertisement.id,
-          imageUrl,
-        })
       }
 
       return res.json({ message: 'norm' });
     } catch (e) {
       console.log(e.response);
       return ApiError.badRequest('Что-то пошло не так');
+    }
+  }
+
+  async getAll(req, res, next) {
+    try {
+      let { brandId, typeId, limit, page } = req.query;
+      page = page || 1;
+      limit = limit || 9;
+      const offset = page * limit - limit;
+      let advertisement;
+
+      if (!brandId && !typeId) {
+        advertisement = await Advertisement.findAll({ limit, offset, order: [['updatedAt', 'DESC']]});
+      }
+      if (brandId && !typeId) {
+        advertisement = await Advertisement.findAll({ where: { brandId }, limit, offset });
+      }
+      if (!brandId && typeId) {
+        advertisement = await Advertisement.findAll({ where: { typeId }, limit, offset });
+      }
+      if (brandId && typeId) {
+        advertisement = await Advertisement.findAll({ where: { typeId, brandId }, limit, offset });
+      }
+
+      return res.json(advertisement);
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getImages(req, res, next) {
+    try {
+      const { advertisementId } = req.query;
+      console.log('advertisementId', advertisementId);
+
+      const advertisementImages = await AdvertisementImages.findAll({ where: { advertisementId } });
+
+      return res.json(advertisementImages.map(({ imageUrl }) => imageUrl));
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getOne(req, res, next) {
+    try {
+      let { id } = req.query;
+
+      const advertisement = await Advertisement.findOne({ where: { id } });
+
+      return res.json(advertisement);
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
     }
   }
 }
