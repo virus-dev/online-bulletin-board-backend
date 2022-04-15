@@ -84,6 +84,7 @@ class UserController {
   }
 
   async update(req, res, next) {
+    let imgRes;
     try {
       const { file, file: { data } } = req.files;
 
@@ -113,11 +114,11 @@ class UserController {
         ...formData.getHeaders(),
         'access-control-allow-headers': 'Cache-Control, X-Requested-With, Content-Type',
         'access-control-allow-methods': 'POST, GET, OPTIONS',
-        'access-control-allow-origin': '*',
+        'access-control-allow-origin': 'https://online-bulletin-board-frontend.herokuapp.com/',
       };
 
-      const imgRes = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMG_BB_API}`, formData, {
-        headers
+      imgRes = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMG_BB_API}`, formData, {
+        headers,
       });
 
       if (imgRes.data.status !== 200) {
@@ -138,6 +139,7 @@ class UserController {
         image: user.image
       });
     } catch (e) {
+      return res.json(e)
       return ApiError.serverError(e.response);
     }
   }
