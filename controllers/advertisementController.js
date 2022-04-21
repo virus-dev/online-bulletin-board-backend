@@ -41,7 +41,7 @@ class AdvertisementController {
 
       const { id } = await User.findOne({ where: { email } });
 
-      if (!email) {
+      if (!id) {
         return ApiError.badRequest('Пользователь не найден');
       }
 
@@ -112,7 +112,6 @@ class AdvertisementController {
   async getImages(req, res, next) {
     try {
       const { advertisementId } = req.query;
-      console.log('advertisementId', advertisementId);
 
       const advertisementImages = await AdvertisementImages.findAll({ where: { advertisementId } });
 

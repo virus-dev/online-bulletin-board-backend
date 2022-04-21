@@ -21,8 +21,6 @@ const generateJWT = (email) => {
 class UserController {
   async registration(req, res, next) {
     try {
-      debugger
-      console.log(req.body);
       const { email, password, role } = req.body;
       if (!email || !password) {
         return next(ApiError.badRequest('Некорректный email или пароль'));
@@ -56,7 +54,6 @@ class UserController {
 
       const { email, password } = req.body;
 
-      console.log(email, password)
       const user = await User.findOne({ where: { email } });
       if (!user) {
         return next(ApiError.badRequest('Пользователь с таким именем не найден'));
@@ -68,8 +65,9 @@ class UserController {
       }
 
       const token = generateJWT(user.email);
-      return res.json({ 
+      return res.json({
         token, 
+        id: user.id,
         email: user.email, 
         role: user.role, 
         firstName: user.firstName, 
@@ -154,6 +152,7 @@ class UserController {
       const user = await User.findOne({ where: { email } });
 
       return res.json({
+        id: user.id,
         email: user.email, 
         role: user.role,
         firstName: user.firstName, 
@@ -162,8 +161,27 @@ class UserController {
         image: user.image,
       })
     } catch (e) {
-      console.log(e.response)
       return ApiError.badRequest('Все плохо');
+    }
+  }
+
+  async getDataById(req, res, next) {
+    try {
+      const { id } = req.query;
+
+      if (!id) {
+        return ApiError.newBadRequest(res, 'Не хватает данных');
+      }
+
+      const user = await User.findOne({ where: { id } });
+
+      if (!user) {
+        return ApiError.newBadRequest(res, 'Пользователь не найден');
+      }
+
+      return res.json({ id, role: user.role, firstName: user.firstName, secondName: user.secondName, image: user.image });
+    } catch (e) {
+      return ApiError.newBadRequest(res, e);
     }
   }
 }

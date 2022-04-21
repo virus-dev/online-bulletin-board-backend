@@ -38,10 +38,19 @@ const AdvertisementImages = sequelize.define('advertisementImages', {
   imageUrl: { type: DataTypes.STRING, allowNull: false }
 })
 
+const Messages = sequelize.define('messages', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  fromUserId: { type: DataTypes.INTEGER, allowNull: false },
+  toUserId: { type: DataTypes.INTEGER, allowNull: false },
+  message: { type: DataTypes.STRING, allowNull: false },
+  status: { type: DataTypes.STRING, allowNull: false },
+})
+
 module.exports = {
   User,
   Advertisement,
   Categories,
   Brands,
   AdvertisementImages,
+  Messages,
 };

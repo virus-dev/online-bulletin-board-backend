@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const server = require('http').createServer();
 const cors = require('cors');
 const axios = require('axios').default;
 const sequelize = require('./db');
@@ -7,8 +8,11 @@ const models = require('./models/models');
 const router = require('./routes/index');
 const { DataTypes } = require('sequelize');
 const fileUpload = require('express-fileupload');
+const wsController = require('./controllers/wsController');
 
 const app = express();
+const WSServer = require('express-ws')(app);
+const aWss = WSServer.getWss();
 
 app.use(cors());
 app.use(fileUpload({}));
@@ -24,6 +28,8 @@ app.use((req, res, next) => {
 
 app.use('/api', router);
 
+app.ws('/wsMessages', (wsController(aWss)));
+
 const start = async () => {
   try {
     await sequelize.authenticate();
@@ -33,4 +39,11 @@ const start = async () => {
     console.log(e);
   }
 }
+
+// const wss = new WebSocket.Server({
+//   server: server,
+// }, () => console.log('Start WS server ' + process.env.PORT || 5000));
+
+// server.on('request', app)
+
 start();

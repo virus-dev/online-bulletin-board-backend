@@ -9,7 +9,7 @@ class ApiError extends Error {
     return new ApiError(404, message);
   }
 
-  static newBadRequest(res, message) {
+  static newBadRequest(res, message = 'Что-то пошло не так') {
     return res.status(500).json(message);
   }
 
