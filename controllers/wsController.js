@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken');
+const ApiError = require("../errors/ApiError");
 const { messageCreate } = require("../helpers/messageCreate");
 
 const connectionHandler = (ws, id) => {
@@ -28,26 +30,33 @@ const sendMessageHandler = ({ aWss, fromUserId, toUserId, newMessage }) => {
 }
 
 const wsController = (aWss) => (ws, req) => {
-  ws.on('message', async (msg) => {
+  ws.on('message', async (msg) => {    
+    try {
+      const {
+        fromUserId,
+        toUserId,
+        userId,
+        method,
+        message,
+        token,
+      } = JSON.parse(msg);
 
-    const {
-      fromUserId,
-      toUserId,
-      userId,
-      method,
-      message,
-    } = JSON.parse(msg);
-    
-    switch (method) {
-      case 'connection':
-        connectionHandler(ws, userId)
-        break;
-      case 'sendMessage':
-        const newMessage = await messageCreate({ fromUserId, toUserId, message });
-        sendMessageHandler({ aWss, fromUserId, toUserId, newMessage });
-        break;
-      default:
-        break;
+      const validToken = token.split(' ')[1];
+      jwt.verify(validToken, process.env.SECRET_KEY)
+
+      switch (method) {
+        case 'connection':
+          connectionHandler(ws, userId)
+          break;
+        case 'sendMessage':
+          const newMessage = await messageCreate({ fromUserId, toUserId, message });
+          sendMessageHandler({ aWss, fromUserId, toUserId, newMessage });
+          break;
+        default:
+          break;
+      }
+    } catch (e) {
+      console.log(e)
     }
   });
 }

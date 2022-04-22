@@ -91,16 +91,16 @@ class AdvertisementController {
       let advertisement;
 
       if (!brandId && !typeId) {
-        advertisement = await Advertisement.findAll({ limit, offset, order: [['updatedAt', 'DESC']]});
+        advertisement = await Advertisement.findAll({ limit, offset, where: { status: 'open' }, order: [['updatedAt', 'DESC']]});
       }
       if (brandId && !typeId) {
-        advertisement = await Advertisement.findAll({ where: { brandId }, limit, offset });
+        advertisement = await Advertisement.findAll({ where: { brandId, status: 'open' }, limit, offset });
       }
       if (!brandId && typeId) {
-        advertisement = await Advertisement.findAll({ where: { typeId }, limit, offset });
+        advertisement = await Advertisement.findAll({ where: { typeId, status: 'open' }, limit, offset });
       }
       if (brandId && typeId) {
-        advertisement = await Advertisement.findAll({ where: { typeId, brandId }, limit, offset });
+        advertisement = await Advertisement.findAll({ where: { typeId, brandId, status: 'open' }, limit, offset });
       }
 
       return res.json(advertisement);
