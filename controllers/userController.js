@@ -10,9 +10,9 @@ const imgbbUploader = require("imgbb-uploader");
 const { checkFileForImgBB } = require('../utils/getCheckFileFunc');
 const { validationCheck } = require('../errors/validationCheck');
 
-const generateJWT = (email) => {
+const generateJWT = (email, role) => {
   return jwt.sign(
-    { email },
+    { email, role },
     process.env.SECRET_KEY,
     { expiresIn: '24h' },
   )
@@ -33,7 +33,7 @@ class UserController {
 
       const hashPassword = await bcrypt.hash(password, 3);
       const user = await User.create({ email, role, password: hashPassword });
-      const token = generateJWT(user.email);
+      const token = generateJWT(user.email, user.role);
       return res.json({ 
         token, 
         email: user.email, 
@@ -64,7 +64,7 @@ class UserController {
         return next(ApiError.badRequest('указан неверный пароль'));
       }
 
-      const token = generateJWT(user.email);
+      const token = generateJWT(user.email, user.role);
       return res.json({
         token, 
         id: user.id,
@@ -125,7 +125,7 @@ class UserController {
 
       await user.update({ image: imgRes.data.data.url });
 
-      const token = generateJWT(user.email);
+      const token = generateJWT(user.email, user.role);
 
       return res.json({ 
         token, 

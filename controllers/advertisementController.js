@@ -113,9 +113,65 @@ class AdvertisementController {
     try {
       const { advertisementId } = req.query;
 
-      const advertisementImages = await AdvertisementImages.findAll({ where: { advertisementId } });
+      const advertisement = await Advertisement.findOne({ where: { id: advertisementId } });
 
-      return res.json(advertisementImages.map(({ imageUrl }) => imageUrl));
+      const advertisementImages = await AdvertisementImages.findAll({ where: { advertisementId } });
+      const advertisementImagesRes = advertisementImages.map(({ imageUrl }) => imageUrl);
+
+      if (advertisement.status === 'open') {
+        return res.json(advertisementImagesRes);
+      }
+
+      const {
+        email,
+        role
+      } = req.user;
+
+      const user = await User.findOne({ where: { email } });
+
+      if (user.id === advertisement.userId) {
+        return res.json(advertisementImagesRes);
+      }
+
+      if (['ADMIN', 'MODERATOR'].includes(role)) {
+        return res.json(advertisementImagesRes);
+      }
+
+      return res.json();
+    } catch (e) {
+      console.log(e)
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getImagesMaybeNotPublic(req, res, next) {
+    try {
+      const { advertisementId } = req.query;
+
+      const advertisement = await Advertisement.findOne({ where: { id: advertisementId } });
+
+      const advertisementImages = await AdvertisementImages.findAll({ where: { advertisementId } });
+      const advertisementImagesRes = advertisementImages.map(({ imageUrl }) => imageUrl);
+
+      if (advertisement.status === 'open') {
+        return res.json(advertisementImagesRes);
+      }
+      
+      const {
+        email,
+      } = req.user;
+
+      const user = await User.findOne({ where: { email } });
+
+      if (user.id === advertisement.userId) {
+        return res.json(advertisementImagesRes);
+      }
+
+      if (['ADMIN', 'MODERATOR'].includes(user.role)) {
+        return res.json(advertisementImagesRes);
+      }
+
+      return;
     } catch (e) {
       return res.status(500).json({ message: 'что-то пошло не так' });
     }
@@ -125,7 +181,99 @@ class AdvertisementController {
     try {
       let { id } = req.query;
 
-      const advertisement = await Advertisement.findOne({ where: { id } });
+      const advertisement = await Advertisement.findOne({ where: { id, status: 'open' } });
+
+      if (!advertisement) {
+        return;
+      }
+
+      return res.json(advertisement);
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getOneMaybeNotPublic(req, res, next) {
+    try {
+      let { id } = req.query;
+
+      let advertisementPublic = await Advertisement.findOne({ where: { id, status: 'open' } });
+
+      if (advertisementPublic) {
+        return res.json(advertisementPublic);
+      }
+
+      const {
+        email,
+        role,
+      } = req.user;
+
+      if (['ADMIN', 'MODERATOR'].includes(role)) {
+        const advertisement = await Advertisement.findOne({ where: { id } });
+        return res.json(advertisement);
+      }
+
+      if (email) {
+        const user = await User.findOne({ where: { email } });
+        const advertisement = await Advertisement.findOne({ where: { id, userId: user.id } });
+
+        if (advertisement) {
+          return res.json(advertisement);
+        }
+      }
+
+      return;
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getOneOnModeration(req, res, next) {
+    try {
+      let { id } = req.query;
+
+      const advertisement = await Advertisement.findOne({ where: { id, status: 'moderation' }, order: [[ 'updateAt', 'DESC' ]], });
+
+      return res.json(advertisement);
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getAllOnModeration(req, res, next) {
+    try {
+      let { limit, page } = req.query;
+      page = page || 1;
+      limit = limit || 9;
+      const offset = page * limit - limit;
+
+      const advertisement = await Advertisement.findAll({ limit, offset, where: { status: 'moderation' } });
+
+      return res.json(advertisement);
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async confirmModeration(req, res, next) {
+    try {
+      const { advertisementId } = req.body;
+      
+      const advertisement = await Advertisement.findOne({ where: { id: advertisementId } });
+      await advertisement.update({ status: 'open' });
+
+      return res.json(advertisement);
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async disconfirmModeration(req, res, next) {
+    try {
+      const { advertisementId } = req.body;
+      
+      const advertisement = await Advertisement.findOne({ where: { id: advertisementId } });
+      await advertisement.update({ status: 'close' });
 
       return res.json(advertisement);
     } catch (e) {
