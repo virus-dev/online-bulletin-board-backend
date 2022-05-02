@@ -1,7 +1,9 @@
+const { Op } = require('sequelize');
 const { default: axios } = require('axios');
 const ApiError = require('../errors/ApiError');
 const { Categories, User, Advertisement, AdvertisementImages } = require('../models/models');
 const FormData = require('form-data');
+const { options } = require('pg/lib/defaults');
 
 const uploadImage = async ({ data }) => {
   const formData = new FormData();
@@ -85,23 +87,47 @@ class AdvertisementController {
   async getAll(req, res, next) {
     try {
       let { brandId, typeId, limit, page } = req.query;
+      const { title } = req.body;
       page = page || 1;
       limit = limit || 9;
       const offset = page * limit - limit;
-      let advertisement;
 
-      if (!brandId && !typeId) {
-        advertisement = await Advertisement.findAll({ limit, offset, where: { status: 'open' }, order: [['updatedAt', 'DESC']]});
-      }
-      if (brandId && !typeId) {
-        advertisement = await Advertisement.findAll({ where: { brandId, status: 'open' }, limit, offset });
-      }
-      if (!brandId && typeId) {
-        advertisement = await Advertisement.findAll({ where: { typeId, status: 'open' }, limit, offset });
-      }
-      if (brandId && typeId) {
-        advertisement = await Advertisement.findAll({ where: { typeId, brandId, status: 'open' }, limit, offset });
-      }
+      const options = {
+        limit,
+        offset,
+        where: {
+          ...(brandId ? { brandId } : {}),
+          ...(typeId ? { typeId } : {}),
+          ...(title ? { title: { [Op.iLike]: `%${title}%` } } : {}),
+          status: 'open',
+        },
+        order: [['updatedAt', 'DESC']],
+      };
+
+      const advertisement = await Advertisement.findAll(options);
+
+      return res.json(advertisement);
+    } catch (e) {
+      return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getAllMyAdvertisement(req, res, next) {
+    try {
+      const {
+        email,
+      } = req.user;
+
+      const user = await User.findOne({ where: { email } });
+
+      const options = {
+        where: {
+          userId: user.id,
+        },
+        order: [['updatedAt', 'DESC']],
+      };
+
+      const advertisement = await Advertisement.findAll(options);
 
       return res.json(advertisement);
     } catch (e) {

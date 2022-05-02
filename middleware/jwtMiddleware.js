@@ -6,7 +6,7 @@ module.exports = function (req, res, next) {
     }
     try {
       const { authorization } = req.headers;
-
+      
       if (!authorization) {
         next();
       }
@@ -20,6 +20,6 @@ module.exports = function (req, res, next) {
       req.user = decoded
       next()
     } catch (e) {
-      res.status(500).json({message: "Что-то пошло не так"})
+      return next()
     }
 };

@@ -6,18 +6,19 @@ const checkRoleMiddleware = require('../middleware/checkRoleMiddleware');
 const jwtMiddleware = require('../middleware/jwtMiddleware');
 
 router.post('/create', authMiddleware, advertisementController.create);
+router.post('/getAll', advertisementController.getAll);
 
 router.put('/confirmModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']), advertisementController.confirmModeration);
 router.put('/disconfirmModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']), advertisementController.disconfirmModeration);
 
 router.get('/getAllOnModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']), advertisementController.getAllOnModeration);
+router.get('/getAllMyAdvertisement', authMiddleware, advertisementController.getAllMyAdvertisement);
 router.get('/getOneOnModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']), advertisementController.getOneOnModeration);
 
 router.get('/getOneMaybeNotPublic', authMiddleware, advertisementController.getOneMaybeNotPublic);
 router.get('/getImagesMaybeNotPublic', authMiddleware, advertisementController.getImagesMaybeNotPublic);
 
 router.get('/getImages', jwtMiddleware, advertisementController.getImages);
-router.get('/getAll', advertisementController.getAll);
 router.get('/getOne', advertisementController.getOne);
 
 module.exports = router;
