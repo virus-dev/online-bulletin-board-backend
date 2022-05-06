@@ -40,10 +40,4 @@ const start = async () => {
   }
 }
 
-// const wss = new WebSocket.Server({
-//   server: server,
-// }, () => console.log('Start WS server ' + process.env.PORT || 5000));
-
-// server.on('request', app)
-
 start();

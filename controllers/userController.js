@@ -21,18 +21,20 @@ const generateJWT = (email, role) => {
 class UserController {
   async registration(req, res, next) {
     try {
-      const { email, password, role, firstName } = req.body;
-      if (!email || !password) {
-        return next(ApiError.badRequest('Некорректный email или пароль'));
+      validationCheck(req, res);
+
+      const { email, password, firstName } = req.body;
+      if (!email || !password || !firstName) {
+        return next(ApiError.notFound(res));
       }
 
       const candidate = await User.findOne({ where: { email } });
       if (candidate) {
-        return next(ApiError.badRequest('Пользователь с таким email уже существует'))
+        return next(ApiError.conflict(res, 'Пользователь с таким email уже существует'))
       }
 
       const hashPassword = await bcrypt.hash(password, 3);
-      const user = await User.create({ email, role, password: hashPassword, firstName });
+      const user = await User.create({ email, password: hashPassword, firstName });
       const token = generateJWT(user.email, user.role);
       return res.json({ 
         token, 
@@ -44,7 +46,7 @@ class UserController {
         image: user.image
       });
     } catch (e) {
-      console.log('Что-то пошло не так', e);
+      return next(ApiError.newServerError(res));
     }
   }
 
@@ -56,12 +58,12 @@ class UserController {
 
       const user = await User.findOne({ where: { email } });
       if (!user) {
-        return next(ApiError.badRequest('Пользователь с таким именем не найден'));
+        return next(ApiError.newBadRequest(res, 'Пользователь с таким именем не найден'));
       }
 
       const comparePassword = bcrypt.compareSync(password, user.password);
       if (!comparePassword) {
-        return next(ApiError.badRequest('указан неверный пароль'));
+        return next(ApiError.newBadRequest(res, 'Указан неверный пароль'));
       }
 
       const token = generateJWT(user.email, user.role);

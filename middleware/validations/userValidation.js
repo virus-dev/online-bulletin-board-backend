@@ -1,10 +1,11 @@
-const { email, password } = require('./validations');
+const { email, password, firstName } = require('./validations');
 
-const loginRouterValidations = [
+const registrationRouterValidations = [
   email(),
   password(),
+  firstName(),
 ]
 
 module.exports = {
-  loginRouterValidations,
+  registrationRouterValidations,
 }
