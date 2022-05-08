@@ -34,6 +34,8 @@ const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    // const a = await models.Messages.findOne({ where: { id: 58 } });
+    // await a.update({ status: 'delivered' });
     app.listen(process.env.PORT || 5000, () => console.log('Start server ' + process.env.PORT || 5000));
   } catch (e) {
     console.log(e);

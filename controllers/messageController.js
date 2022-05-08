@@ -121,34 +121,42 @@ class messageController {
       let onceId = [];
 
       const dialogs = messages.reduce((prevValue, currentValue) => {
+        // Первая итерация
         if (!prevValue.length) {
+          if (currentValue.id === 58) { console.log('1') }
           onceId = [currentValue.toUserId, currentValue.fromUserId];
           
-          currentValue.status === 'delivered' && currentValue.setDataValue('unreadMessagesCount', 1);
+          currentValue.status === 'delivered' && currentValue.fromUserId !== user.id && currentValue.toUserId === user.id && currentValue.setDataValue('unreadMessagesCount', 1);
 
           return [currentValue];
         }
 
+        // Новый диалог
         if (
           !onceId.includes(currentValue.fromUserId) || !onceId.includes(currentValue.toUserId)
         ) {
+            if (currentValue.id === 58) { console.log('2') }
           onceId = [...onceId, currentValue.fromUserId, currentValue.toUserId]
-          currentValue.status === 'delivered' && currentValue.setDataValue('unreadMessagesCount', 1);
+          currentValue.status === 'delivered' && currentValue.fromUserId !== user.id && currentValue.toUserId === user.id && currentValue.setDataValue('unreadMessagesCount', 1);
           return [...prevValue, currentValue];
         }
 
         const currectDialog = prevValue.find((el) => 
-          el.fromUserId === currentValue.fromUserId && el.toUserId === currentValue.toUserId 
+          el.fromUserId === currentValue.fromUserId && el.toUserId === currentValue.toUserId
           || el.fromUserId === currentValue.toUserId && el.toUserId === currentValue.fromUserId
         );
-        const unreadMessagesCount = currectDialog.getDataValue('unreadMessagesCount');
-        currectDialog.setDataValue('unreadMessagesCount', unreadMessagesCount + 1);
+
+        if (currentValue.status === 'delivered' && currentValue.fromUserId !== user.id && currentValue.toUserId === user.id) {
+          const unreadMessagesCount = currectDialog.getDataValue('unreadMessagesCount');
+          currectDialog.setDataValue('unreadMessagesCount', (unreadMessagesCount || 0) + 1);
+        }
 
         return prevValue;
       }, [])
 
       return res.json(dialogs);
     } catch (e) {
+      console.log(e)
       return ApiError.newBadRequest(res, e);
     }
   }
@@ -180,6 +188,7 @@ class messageController {
           fromUserId: { [Op.or]: [user.id, idInterlocutor] },
           toUserId: { [Op.or]: [user.id, idInterlocutor] },
         },
+        order: [[ 'createdAt' ]],
       });
 
       return res.json(messages);
