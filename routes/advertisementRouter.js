@@ -4,8 +4,9 @@ const advertisementController = require('../controllers/advertisementController'
 const authMiddleware = require('../middleware/authMiddleware');
 const checkRoleMiddleware = require('../middleware/checkRoleMiddleware');
 const jwtMiddleware = require('../middleware/jwtMiddleware');
+const { advertisementCreate } = require('../middleware/validations/advertisementValidation');
 
-router.post('/create', authMiddleware, advertisementController.create);
+router.post('/create', advertisementCreate, authMiddleware, advertisementController.create);
 router.post('/getAll', advertisementController.getAll);
 
 router.put('/confirmModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']), advertisementController.confirmModeration);

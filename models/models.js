@@ -31,6 +31,7 @@ const Categories = sequelize.define('categories', {
 const Brands = sequelize.define('brands', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, unique: true },
+  categoryId: { type: DataTypes.INTEGER },
 });
 
 const AdvertisementImages = sequelize.define('advertisementImages', {

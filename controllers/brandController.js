@@ -4,7 +4,13 @@ const { Brands } = require('../models/models');
 class BrandsController {
   async getBrands(req, res, next) {
     try {
-      const brands = await Brands.findAll();
+      const { categoryId } = req.query;
+
+      if (!categoryId) {
+        return ApiError.normalBadRequest(res, 'Недостаточно данных');
+      }
+
+      const brands = await Brands.findAll({ where: { categoryId } });
       return res.json(
         brands.map(({ id, name }) => ({ id, name }))
       );

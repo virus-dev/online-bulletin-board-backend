@@ -52,8 +52,6 @@ class UserController {
 
   async login(req, res, next) {
     try {
-      validationCheck(req, res);
-
       const { email, password } = req.body;
 
       const user = await User.findOne({ where: { email } });

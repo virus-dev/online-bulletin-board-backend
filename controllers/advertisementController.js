@@ -4,6 +4,7 @@ const ApiError = require('../errors/ApiError');
 const { Categories, User, Advertisement, AdvertisementImages } = require('../models/models');
 const FormData = require('form-data');
 const { options } = require('pg/lib/defaults');
+const { validationCheck } = require('../errors/validationCheck');
 
 const uploadImage = async ({ data }) => {
   const formData = new FormData();
@@ -19,6 +20,8 @@ const uploadImage = async ({ data }) => {
 class AdvertisementController {
   async create(req, res, next) {
     try {
+      validationCheck(req, res);
+
       const { files } = req;
 
       const {
