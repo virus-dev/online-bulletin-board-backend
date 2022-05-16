@@ -89,22 +89,23 @@ class AdvertisementController {
 
   async getAll(req, res, next) {
     try {
-      let { brandId, typeId, limit, page } = req.query;
+      let { brandId, categoryId, limit, page, sort } = req.query;
       const { title } = req.body;
       page = page || 1;
       limit = limit || 9;
       const offset = page * limit - limit;
+      const [field, orderBy = 'DESC'] = sort.split('.');
 
       const options = {
         limit,
         offset,
         where: {
-          ...(brandId ? { brandId } : {}),
-          ...(typeId ? { typeId } : {}),
+          ...(!!Number(brandId) ? { brandId } : {}),
+          ...(!!Number(categoryId) ? { categoryId } : {}),
           ...(title ? { title: { [Op.iLike]: `%${title}%` } } : {}),
           status: 'open',
         },
-        order: [['updatedAt', 'DESC']],
+        order: [[field || 'updatedAt', orderBy]],
       };
 
       const advertisement = await Advertisement.findAll(options);
