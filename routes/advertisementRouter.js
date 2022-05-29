@@ -15,6 +15,7 @@ router.put('/disconfirmModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']),
 router.get('/getAllOnModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']), advertisementController.getAllOnModeration);
 router.get('/getAllMyAdvertisement', authMiddleware, advertisementController.getAllMyAdvertisement);
 router.get('/getOneOnModeration', checkRoleMiddleware(['ADMIN', 'MODERATOR']), advertisementController.getOneOnModeration);
+router.get('/getCurrentAdvertisement', advertisementController.getCurrentAdvertisement);
 
 router.get('/getOneMaybeNotPublic', authMiddleware, advertisementController.getOneMaybeNotPublic);
 router.get('/getImagesMaybeNotPublic', authMiddleware, advertisementController.getImagesMaybeNotPublic);

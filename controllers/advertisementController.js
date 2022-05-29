@@ -5,6 +5,7 @@ const { Categories, User, Advertisement, AdvertisementImages } = require('../mod
 const FormData = require('form-data');
 const { options } = require('pg/lib/defaults');
 const { validationCheck } = require('../errors/validationCheck');
+const { response } = require('express');
 
 const uploadImage = async ({ data }) => {
   const formData = new FormData();
@@ -113,6 +114,42 @@ class AdvertisementController {
       return res.json(advertisement);
     } catch (e) {
       return res.status(500).json({ message: 'что-то пошло не так' });
+    }
+  }
+
+  async getCurrentAdvertisement(req, res, next) {
+    try {
+      let {
+        brandId,
+        categoryId,
+        limit,
+        page,
+        advertisementsViewed,
+      } = req.query;
+
+      if (!advertisementsViewed) {
+        return ApiError.normalBadRequest(res, 'Некорректные данные');
+      }
+
+      page = page || 1;
+      limit = limit || 9;
+
+      const optionsWhere = {
+        ...(!!Number(brandId) ? { brandId } : {}),
+        ...(!!Number(categoryId) ? { categoryId } : {}),
+        status: 'open',
+      }
+
+      const newAdvertisementsViewed = advertisementsViewed.split(',');
+      const promiseArr = newAdvertisementsViewed.splice((page - 1) * limit, limit).map(id => (
+        Advertisement.findOne({ where: { ...optionsWhere, id } })
+      ));
+
+      const PromiseAll = await Promise.all(promiseArr);
+
+      return res.status(200).json(PromiseAll.filter(Boolean));
+    } catch (e) {
+      return ApiError.newServerError(res);
     }
   }
 
