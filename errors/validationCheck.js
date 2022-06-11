@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const ApiError = require('./ApiError');
 
-const validationCheck = (req, res) => {
+const validationCheck = (req, res, next) => {
   const { errors } = validationResult(req);
 
   if (errors.length) {
@@ -9,7 +9,7 @@ const validationCheck = (req, res) => {
       msg, param
     }));
 
-    return ApiError.normalBadRequest(res, resJson)
+    return ApiError.normalBadRequest(res, resJson);
   }
 }
 
