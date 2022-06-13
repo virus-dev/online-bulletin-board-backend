@@ -129,6 +129,8 @@ class AdvertisementController {
         }
   
         return res.status(200).json(result);
+      } else if (advertisementsViewed === '') {
+        return res.status(200).json([]);
       } else if (myAdvertisements) {
         const {
           email,
@@ -324,6 +326,7 @@ class AdvertisementController {
 
   async getOne(req, res, next) {
     try {
+      debugger;
       let { id } = req.query;
 
       const {
@@ -342,6 +345,10 @@ class AdvertisementController {
       } else if (email) {
         const user = await User.findOne({ where: { email } });
         advertisement = await Advertisement.findOne({ where: { id, userId: user.id }, include });
+
+        if (!advertisement) {
+          advertisement = await Advertisement.findOne({ where: { id, status: 'open' }, include })
+        }
       } else {
         advertisement = await Advertisement.findOne({ where: { id, status: 'open' }, include })
       }
