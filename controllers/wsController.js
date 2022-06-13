@@ -1,29 +1,42 @@
 const jwt = require('jsonwebtoken');
 const ApiError = require("../errors/ApiError");
 const { messageCreate } = require("../helpers/messageCreate");
-const { Messages } = require("../models/models");
+const { Messages, User } = require("../models/models");
 
 const connectionHandler = (ws, id) => {
   ws.id = id;
 }
 
 const sendMessageHandler = ({ aWss, fromUserId, toUserId, newMessage }) => {
-  aWss.clients.forEach((client) => {
+  aWss.clients.forEach(async (client) => {
     if (client.id === fromUserId) {
+      const user = await User.findOne({ where: { id: toUserId }, attributes: ['email', 'id', 'firstName', 'secondName', 'image', 'phone', 'role'] });
+      Messages.findAll({ where: { toUserId: fromUserId, fromUserId: toUserId, status: 'delivered' } })
+        .then((messages) => {
+          messages.forEach((message) => {
+            message.update({ status: 'read' })
+          })
+        });
       // Отправитель
       const sendObj = {
         info: 'Ты отправил сообщение',
         method: 'youSendMessage',
         message: newMessage,
+        user: user,
+        unreadMessagesCount: 0,
       }
       client.send(JSON.stringify(sendObj))
     }
     if (client.id === toUserId) {
+      const user = await User.findOne({ where: { id: fromUserId }, attributes: ['email', 'id', 'firstName', 'secondName', 'image', 'phone', 'role'] })
+      const unreadMessagesCount = await Messages.count({ where: { fromUserId, toUserId, status: 'delivered' } })
       // Получатель
       const sendObj = {
         info: 'Ты получил сообщение',
         method: 'toYouSendMessage',
         message: newMessage,
+        user: user,
+        unreadMessagesCount,
       }
       client.send(JSON.stringify(sendObj))
     }

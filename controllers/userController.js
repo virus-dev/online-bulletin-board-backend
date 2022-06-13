@@ -21,38 +21,45 @@ const generateJWT = (email, role) => {
 class UserController {
   async registration(req, res, next) {
     try {
-      validationCheck(req, res);
+      debugger;
+      validationCheck(req, res, next);
 
       const { email, password, firstName } = req.body;
       if (!email || !password || !firstName) {
-        return next(ApiError.notFound(res));
+        return ApiError.badRequest('Не все данные');
       }
 
       const candidate = await User.findOne({ where: { email } });
       if (candidate) {
-        return next(ApiError.conflict(res, 'Пользователь с таким email уже существует'))
+        return ApiError.conflict(res, 'Пользователь с таким email уже существует');
       }
 
       const hashPassword = await bcrypt.hash(password, 3);
       const user = await User.create({ email, password: hashPassword, firstName });
       const token = generateJWT(user.email, user.role);
       return res.json({ 
-        token, 
+        token,
         email: user.email, 
         role: user.role, 
-        firstName: user.firstName, 
-        secondName: user.secondName, 
-        phone: user.phone, 
+        firstName: user.firstName,
+        secondName: user.secondName,
+        phone: user.phone,
         image: user.image
       });
     } catch (e) {
-      return next(ApiError.newServerError(res));
+      // debugger;
+      // return ApiError.newServerError(res);
+      return res.status(500).json({ message: 'что-то пошло не так' });
     }
   }
 
   async login(req, res, next) {
     try {
       const { email, password } = req.body;
+
+      if (!email || !password) {
+        return ApiError.normalBadRequest(res, 'Недостаточно данных');
+      }
 
       const user = await User.findOne({ where: { email } });
       if (!user) {
@@ -68,7 +75,7 @@ class UserController {
       return res.json({
         token, 
         id: user.id,
-        email: user.email, 
+        email: user.email,
         role: user.role, 
         firstName: user.firstName, 
         secondName: user.secondName, 
@@ -138,7 +145,6 @@ class UserController {
       });
     } catch (e) {
       return res.json(e)
-      return ApiError.serverError(e.response);
     }
   }
 

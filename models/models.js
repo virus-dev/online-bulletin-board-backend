@@ -47,6 +47,15 @@ const Messages = sequelize.define('messages', {
   status: { type: DataTypes.STRING, allowNull: false },
 })
 
+User.hasMany(Messages, { foreignKey: 'id' });
+Messages.belongsTo(User, { foreignKey: 'fromUserId' });
+
+User.hasMany(Advertisement)
+Advertisement.belongsTo(User);
+
+Advertisement.hasMany(AdvertisementImages);
+AdvertisementImages.belongsTo(Advertisement);
+
 module.exports = {
   User,
   Advertisement,

@@ -6,9 +6,11 @@ module.exports = function (req, res, next) {
     }
     try {
       const { authorization } = req.headers;
+
+      req.user = {};
       
       if (!authorization) {
-        next();
+        return next();
       }
 
       const token = authorization.split(' ')[1];
@@ -17,8 +19,8 @@ module.exports = function (req, res, next) {
       }
 
       const decoded = jwt.verify(token, process.env.SECRET_KEY)
-      req.user = decoded
-      next()
+      req.user = decoded;
+      return next()
     } catch (e) {
       return next()
     }

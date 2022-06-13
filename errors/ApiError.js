@@ -30,7 +30,16 @@ class ApiError extends Error {
   }
 
   static newServerError(res, message = '') {
-    return res.status(500).json('Что-то пошло не так' + message)
+    // return res.status(500).json({ message: 'Что-то пошло не так' + message })
+    return res.status(500).json({ message: 'что-то пошло не так' });
+  }
+
+  static unauthorized(res, message = '') {
+    return res.status(401).json({ message: 'Не авторизован' });
+  }
+
+  static forbidden(res, message = '') {
+    return res.status(403).json({ message: 'Нет доступа' });
   }
 }
 

@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const ApiError = require('../errors/ApiError');
-const { Messages, User } = require('../models/models');
+const { Messages, User, Advertisement } = require('../models/models');
 
 class messageController {
   async sendMessage(req, res, next) {
@@ -119,7 +119,6 @@ class messageController {
       });
 
       let onceId = [];
-
       const dialogs = messages.reduce((prevValue, currentValue) => {
         // Первая итерация
         if (!prevValue.length) {
@@ -154,10 +153,21 @@ class messageController {
         return prevValue;
       }, [])
 
+      const promises = [];
+      dialogs.forEach(el => {
+        const userId = user.id === el.fromUserId ?  el.toUserId : el.fromUserId ;
+        promises.push(User.findOne({ where: { id: userId } }));
+      });
+
+      const promisesRes = await Promise.all(promises);
+
+      dialogs.forEach((currectDialog, i) => {
+        currectDialog.setDataValue('user', promisesRes[i]);
+      })
+
       return res.json(dialogs);
     } catch (e) {
-      console.log(e)
-      return ApiError.newBadRequest(res, e);
+      return ApiError.newBadRequest(res, '');
     }
   }
 

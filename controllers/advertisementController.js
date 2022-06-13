@@ -90,28 +90,108 @@ class AdvertisementController {
 
   async getAll(req, res, next) {
     try {
-      let { brandId, categoryId, limit, page, sort } = req.query;
-      const { title } = req.body;
+      let {
+        brandId, categoryId, limit, page, sort,
+        title, advertisementsViewed, myAdvertisements, moderation,
+      } = req.query;
       page = page || 1;
       limit = limit || 9;
       const offset = page * limit - limit;
-      const [field, orderBy = 'DESC'] = sort.split('.');
+      const [field, orderBy = 'DESC'] = sort ? sort.split('.') : [];
+      let options;
+      const include = {
+        model: AdvertisementImages,
+        attributes: ['imageUrl'],
+      }
 
-      const options = {
-        limit,
-        offset,
-        where: {
+      if (advertisementsViewed) {
+        const optionsWhere = {
           ...(!!Number(brandId) ? { brandId } : {}),
           ...(!!Number(categoryId) ? { categoryId } : {}),
-          ...(title ? { title: { [Op.iLike]: `%${title}%` } } : {}),
           status: 'open',
-        },
-        order: [[field || 'updatedAt', orderBy]],
-      };
+        }
+  
+        const newAdvertisementsViewed = advertisementsViewed.split(',');
+        const promiseArr = newAdvertisementsViewed.splice((page - 1) * limit, limit).map(id => (
+          Advertisement.findOne({
+            where: { ...optionsWhere, id },
+            attributes: ['title', 'price', 'id', 'updatedAt'],
+            include,
+          })
+        ));
+  
+        const PromiseAll = await Promise.all(promiseArr);
 
-      const advertisement = await Advertisement.findAll(options);
+        const result = PromiseAll.filter(Boolean);
 
-      return res.json(advertisement);
+        if (!result.length) {
+          return res.json({ adsAreOver: true });
+        }
+  
+        return res.status(200).json(result);
+      } else if (advertisementsViewed === '') {
+        return res.status(200).json([]);
+      } else if (myAdvertisements) {
+        const {
+          email,
+        } = req.user;
+
+        if (!email) {
+          return ApiError.unauthorized(res);
+        }
+
+        const user = await User.findOne({ where: { email } });
+
+        options = {
+          where: { userId: user.id },
+          include,
+        };
+      } else if (moderation) {
+        const {
+          role,
+          email,
+        } = req.user;
+
+        if (!email) {
+          return ApiError.unauthorized(res);
+        }
+
+        if (!['ADMIN', 'MODERATOR'].includes(role)) {
+          return ApiError.forbidden(res);
+        }
+
+        options = {
+          include,
+          where: {
+            status: 'moderation',
+          },
+        };
+      } else {
+        options = {
+          limit,
+          offset,
+          where: {
+            ...(!!Number(brandId) ? { brandId } : {}),
+            ...(!!Number(categoryId) ? { categoryId } : {}),
+            ...(title ? { title: { [Op.iLike]: `%${title}%` } } : {}),
+            status: 'open',
+          },
+          order: [[field || 'updatedAt', orderBy]],
+          attributes: ['title', 'price', 'id', 'updatedAt'],
+          include: {
+            model: AdvertisementImages,
+            attributes: ['imageUrl'],
+          },
+        };
+      }
+
+      const advertisements = await Advertisement.findAll(options);
+
+      if (!advertisements.length) {
+        return res.json({ adsAreOver: true });
+      }
+
+      return res.json(advertisements);
     } catch (e) {
       return res.status(500).json({ message: 'что-то пошло не так' });
     }
@@ -246,13 +326,40 @@ class AdvertisementController {
 
   async getOne(req, res, next) {
     try {
+      debugger;
       let { id } = req.query;
 
-      const advertisement = await Advertisement.findOne({ where: { id, status: 'open' } });
+      const {
+        email,
+        role,
+      } = req.user;
+
+      const include = {
+        model: User,
+        attributes: ['email', 'id', 'firstName', 'secondName', 'image', 'phone', 'role'],
+      }
+
+      let advertisement;
+      if (['ADMIN', 'MODERATOR'].includes(role)) {
+        advertisement = await Advertisement.findOne({ where: { id }, include });
+      } else if (email) {
+        const user = await User.findOne({ where: { email } });
+        advertisement = await Advertisement.findOne({ where: { id, userId: user.id }, include });
+
+        if (!advertisement) {
+          advertisement = await Advertisement.findOne({ where: { id, status: 'open' }, include })
+        }
+      } else {
+        advertisement = await Advertisement.findOne({ where: { id, status: 'open' }, include })
+      }
 
       if (!advertisement) {
-        return;
+        return ApiError.normalBadRequest(res, 'Объявление не найдено');
       }
+
+      const advertisementImage = await AdvertisementImages.findAll({ where: { advertisementId: id } })
+        .then((images) => images.map(({ imageUrl }) => imageUrl));
+      advertisement.setDataValue('advertisementImages', advertisementImage)
 
       return res.json(advertisement);
     } catch (e) {
